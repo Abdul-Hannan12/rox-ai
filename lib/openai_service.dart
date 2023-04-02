@@ -16,14 +16,20 @@ class OpenAIService {
         },
         body: jsonEncode(
           {
-            "model": "text-davinci-003",
-            "prompt":
-                "Does this message want to generate an AI picture, image, art or anything similar? $prompt . Simply answer with a yes or no.",
+            "model": "gpt-3.5-turbo",
+            "messages": [
+              {
+                "role": "user",
+                "content":
+                    "Does this message want to generate an AI picture, image, art or anything similar? $prompt . Simply answer with a yes or no."
+              }
+            ]
           },
         ),
       );
       if (res.statusCode == 200) {
-        String content = jsonDecode(res.body)['choices'][0]['text'];
+        String content =
+            jsonDecode(res.body)['choices'][0]['messages']['content'];
         content = content.trim();
         switch (content) {
           case 'yes':
@@ -44,7 +50,10 @@ class OpenAIService {
   }
 
   Future<String> chatGPTAPI(String prompt) async {
-    // msgs.add(prompt);
+    msgs.add({
+      'role': 'user',
+      'content': prompt,
+    });
     try {
       final res = await http.post(
         Uri.parse('https://api.openai.com/v1/completions'),
@@ -54,15 +63,19 @@ class OpenAIService {
         },
         body: jsonEncode(
           {
-            "model": "text-davinci-003",
-            "prompt":
-                "Does this message want to generate an AI picture, image, art or anything similar? $prompt . Simply answer with a yes or no.",
+            "model": "gpt-3.5-turbo",
+            "messages": msgs,
           },
         ),
       );
       if (res.statusCode == 200) {
         String content = jsonDecode(res.body)['choices'][0]['text'];
         content = content.trim();
+        msgs.add({
+          'role': 'assistant',
+          'content': content,
+        });
+        return content;
       }
       return 'An Internal Error Occured';
     } catch (e) {
